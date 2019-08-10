@@ -17,29 +17,36 @@ import NavigationService from "../services/NavigationService";
 import { CheckBox } from "react-native-elements";
 import { loginAsync } from "../actions/thunk";
 import { connect } from "react-redux";
+import StorageService from "../services/StorageService";
+import { ordersLoaded } from "../actions/actions";
 
 class Login extends Component {
 	state = {
 		status: "idle",
-		username: "",
+		email: "",
 		password: "",
 		remember: true,
 		error: ""
 	};
+	componentDidMount() {
+		let isAuthenticated = Object.keys(StorageService.getState()).length > 0;
+		if (isAuthenticated) {
+			this.props.navigation.navigate("Account");
+		}
+	}
 	login = () => {
-		let { username, password } = this.state;
+		let { email, password } = this.state;
 		this.setState({ ...this.state, status: "rotate" });
+		this.props.dispatch(ordersLoaded([]));
 		this.props.dispatch(
-			loginAsync({ username, password }, ({ status, data }) => {
+			loginAsync({ email, password }, ({ status, data }) => {
 				if (status === 200) {
-					console.warn("status success");
-					NavigationService.navigate("Categories");
+					NavigationService.goBack();
 					setTimeout(
 						() => this.setState({ ...this.state, status: "idle" }),
 						200
 					);
 				} else {
-					console.warn(data);
 					this.setState({
 						...this.state,
 						error: data.message,
@@ -89,7 +96,6 @@ class Login extends Component {
 						leftIcon={() => (
 							<Icon name="user-thin" size={18} color="#069627" />
 						)}
-						textContentType="emailAddress"
 						placeholder="example@email.com"
 						rightIcon={() => (
 							<Feather name="x" size={18} color="#fb3838" />
@@ -97,6 +103,8 @@ class Login extends Component {
 						successIcon={() => (
 							<Feather name="check" size={18} color="#069627" />
 						)}
+						keyboardType="email-address"
+						textContentType="emailAddress"
 					/>
 					<RoundInput
 						onTextChange={(key, val) =>
@@ -110,7 +118,6 @@ class Login extends Component {
 						leftIcon={() => (
 							<Icon name="password-o" size={18} color="#069627" />
 						)}
-						textContentType="emailAddress"
 						placeholder="**********"
 						rightIcon={() => (
 							<Feather name="x" size={18} color="#fb3838" />

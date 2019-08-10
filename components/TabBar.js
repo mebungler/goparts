@@ -10,6 +10,8 @@ import {
 import { Svg } from "expo";
 import * as shape from "d3-shape";
 import StaticTabbar from "./StaticTabBar";
+import { connect } from "react-redux";
+import StorageService from "../services/StorageService";
 
 const { width } = Dimensions.get("window");
 const height = 64;
@@ -23,16 +25,37 @@ export class TabBarComponent extends React.Component {
 		super(props);
 		const { navigation } = this.props;
 		const tabWidth = width / navigation.state.routes.length;
-		this.value.setValue(-width + tabWidth * 2);
+		this.value.setValue(-width + tabWidth * navigation.state.index);
 		this.values = navigation.state.routes.map(
-			(tab, index) => new Animated.Value(index === 2 ? 1 : 0)
+			(tab, index) =>
+				new Animated.Value(index === navigation.state.index ? 1 : 0)
 		);
+	}
+	componentDidUpdate(prevProps, prevState) {
+		const tabWidth = width / this.props.navigation.state.routes.length;
+		let { values, value } = this;
+		let key = this.props.navigation.state.index;
+		let activeValue = values[this.props.navigation.state.index];
+		values.map((a, i) => {
+			a.setValue(0);
+		});
+		Animated.parallel([
+			Animated.spring(activeValue, {
+				toValue: 1,
+				useNativeDriver: true
+			}),
+			Animated.spring(value, {
+				toValue: -width + tabWidth * key,
+				useNativeDriver: true
+			})
+		]).start();
 	}
 	render() {
 		const { value, values } = this;
 		const { navigation, renderIcon, onTabPress } = this.props;
 		const { state } = navigation;
 		const tabWidth = width / state.routes.length;
+		let normalTabWidth = width / 5;
 		const tab = shape
 			.line()
 			.x(d => d.x)
@@ -42,10 +65,10 @@ export class TabBarComponent extends React.Component {
 			{ x: width, y: 0 },
 			{ x: width + 10, y: 10 },
 			{ x: width + 25, y: height / 2 },
-			{ x: width + tabWidth - 25, y: height / 2 },
-			{ x: width + tabWidth - 10, y: 10 },
-			{ x: width + tabWidth, y: 0 },
-			{ x: width + tabWidth + 15, y: 0 }
+			{ x: width + normalTabWidth - 25, y: height / 2 },
+			{ x: width + normalTabWidth - 10, y: 10 },
+			{ x: width + normalTabWidth, y: 0 },
+			{ x: width + normalTabWidth + 15, y: 0 }
 		]);
 		const left = shape
 			.line()
@@ -68,7 +91,19 @@ export class TabBarComponent extends React.Component {
 				<AnimatedSvg
 					{...{ height }}
 					width={width * 2.5}
-					style={{ transform: [{ translateX: value }] }}
+					style={{
+						transform: [
+							{
+								translateX: Animated.add(
+									tabWidth === normalTabWidth
+										? 0
+										: normalTabWidth / 3,
+									value
+								)
+							}
+						],
+						backgroundColor: "white"
+					}}
 				>
 					<Path {...{ d }} fill="black" />
 				</AnimatedSvg>
@@ -103,22 +138,6 @@ export class TabBarComponent extends React.Component {
 										key={route.key}
 										onPress={() => {
 											onTabPress({ route });
-											const tabWidth =
-												width / state.routes.length;
-											values.map((a, i) => {
-												a.setValue(0);
-											});
-											Animated.parallel([
-												Animated.spring(activeValue, {
-													toValue: 1,
-													useNativeDriver: true
-												}),
-												Animated.spring(value, {
-													toValue:
-														-width + tabWidth * key,
-													useNativeDriver: true
-												})
-											]).start();
 										}}
 									>
 										<Animated.View
@@ -172,81 +191,25 @@ export class TabBarComponent extends React.Component {
 	}
 }
 
-export default TabBarComponent;
+const mapStateToProps = ({ user }) => {
+	let usr = user;
+	if (Object.keys(user).length === 0) {
+		usr = StorageService.getState();
+		if (
+			usr === null ||
+			usr === "" ||
+			usr === undefined ||
+			Object.keys(usr).length === 0
+		)
+			return {
+				isAuthenticated: false,
+				user: {}
+			};
+	}
+	return {
+		isAuthenticated: true,
+		user: usr
+	};
+};
 
-// <View
-// 			style={{
-// 				flexDirection: "row",
-// 				justifyContent: "space-between",
-// 				padding: 30,
-// 				backgroundColor: "#1c1b1b"
-// 			}}
-// 		>
-// 			{state.routes.map((route, index) => {
-// 				const focused = index === navigation.state.index;
-// 				const scene = { route, focused };
-// 				console.warn(
-// 					state.routes.length % 2 === 1 &&
-// 						parseInt(state.routes.length / 2) === index
-// 				);
-// 				if (
-// 					state.routes.length % 2 === 1 &&
-// 					parseInt(state.routes.length / 2) === index
-// 				) {
-// 					return (
-// 						<View>
-// 							<View
-// 								style={{
-// 									flexDirection: "row"
-// 								}}
-// 							>
-// 								<View
-// 									style={{
-// 										backgroundColor: "white",
-// 										marginTop: 0,
-// 										borderBottomLeft: 40,
-// 										borderBottomRight: 40,
-// 										padding: 30,
-// 										marginTop: -50,
-// 										position: "absolute"
-// 									}}
-// 								/>
-// 								<View
-// 									style={{
-// 										padding: 30,
-// 										backgroundColor: "#1c1b1b",
-// 										borderTopRightRadius: 40,
-// 										marginTop: -30,
-// 										marginLeft: -60,
-// 										position: "absolute"
-// 									}}
-// 								/>
-// 								<View
-// 									style={{
-// 										padding: 15,
-// 										backgroundColor: "#1c1b1b",
-// 										position: "absolute"
-// 									}}
-// 								/>
-// 							</View>
-// 							<View
-// 								style={{
-// 									backgroundColor: "#fe0505",
-// 									borderRadius: 100,
-// 									marginTop: -90,
-// 									padding: 15,
-// 									height: 55
-// 								}}
-// 							>
-// 								{renderIcon(scene)}
-// 							</View>
-// 						</View>
-// 					);
-// 				}
-// 				return (
-// 					<View style={{ alignItems: "center" }}>
-// 						{renderIcon(scene)}
-// 					</View>
-// 				);
-// 			})}
-// 		</View>
+export default connect(mapStateToProps)(TabBarComponent);

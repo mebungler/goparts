@@ -8,6 +8,7 @@ import { CheckBox } from "react-native-elements";
 import { registerAsync } from "../actions/thunk";
 import { connect } from "react-redux";
 import NavigationService from "../services/NavigationService";
+import { ordersLoaded } from "../actions/actions";
 
 class Register extends Component {
 	constructor(props) {
@@ -17,10 +18,10 @@ class Register extends Component {
 		agree: true,
 		status: "idle",
 		seller: true,
-		login: "",
-		city: "",
+		username: "",
+		location: "",
 		phone: "",
-		companyname: "",
+		legal_info: "",
 		email: "",
 		password: ""
 	};
@@ -30,20 +31,21 @@ class Register extends Component {
 			phone,
 			email,
 			password,
-			companyname,
-			login,
-			city,
+			legal_info,
+			username,
+			location,
 			seller
 		} = this.state;
 		let user = {
 			phone,
 			email,
 			password,
-			legal_info: companyname,
-			location: city,
+			legal_info,
+			location,
 			role: seller ? 1 : 0,
-			username: login
+			username
 		};
+		this.props.dispatch(ordersLoaded([]));
 		this.props.dispatch(
 			registerAsync({ ...user }, () => {
 				this.setState({ ...this.state, status: "success" });
@@ -51,7 +53,7 @@ class Register extends Component {
 					"Your request has been sent to our admins." +
 						" You will be contacted soon! Thans for cooperation"
 				);
-				setTimeout(() => NavigationService.navigate("Filter"), 100);
+				setTimeout(() => NavigationService.goBack(), 100);
 			})
 		);
 	};
@@ -162,6 +164,7 @@ class Register extends Component {
 							)}
 							simple
 							placeholder="Company Name"
+							name="legal_info"
 						/>
 						<RoundInput
 							onTextChange={(key, val) =>
@@ -176,6 +179,7 @@ class Register extends Component {
 							)}
 							simple
 							placeholder="City"
+							name="location"
 						/>
 						<RoundInput
 							onTextChange={(key, val) =>
@@ -186,6 +190,9 @@ class Register extends Component {
 							)}
 							simple
 							placeholder="Phone"
+							name="phone"
+							keyboardType="phone-pad"
+							textContentType="telephoneNumber"
 						/>
 						<RoundInput
 							onTextChange={(key, val) =>
@@ -196,6 +203,7 @@ class Register extends Component {
 							)}
 							simple
 							placeholder="Login"
+							name="username"
 						/>
 						<RoundInput
 							onTextChange={(key, val) =>
@@ -206,6 +214,9 @@ class Register extends Component {
 							)}
 							simple
 							placeholder="Email"
+							name="email"
+							keyboardType="email-address"
+							textContentType="emailAddress"
 						/>
 						<RoundInput
 							onTextChange={(key, val) =>
@@ -218,9 +229,11 @@ class Register extends Component {
 									color="#c4c4c4"
 								/>
 							)}
+							name="password"
 							simple
 							password
 							placeholder="Password"
+							textContentType="newPassword"
 						/>
 						<View
 							style={{

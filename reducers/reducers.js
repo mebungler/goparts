@@ -8,7 +8,7 @@ export const user = (state = {}, action) => {
 			StorageService.saveChanges();
 			return { ...action.user };
 		case "USER_LOGGED_OUT":
-			StorageService.setState("NA");
+			StorageService.setState("");
 			StorageService.saveChanges();
 			return {};
 		case "USER_REGISTRED":
@@ -32,6 +32,24 @@ export const models = (state = [], action) => {
 	switch (action.type) {
 		case "MODELS_LOADED":
 			return action.models;
+		default:
+			return state;
+	}
+};
+
+export const generations = (state = [], action) => {
+	switch (action.type) {
+		case "GENERATIONS_LOADED":
+			return action.generations;
+		default:
+			return state;
+	}
+};
+
+export const modifications = (state = [], action) => {
+	switch (action.type) {
+		case "MODIFICATIONS_LOADED":
+			return action.modifications;
 		default:
 			return state;
 	}
@@ -64,10 +82,31 @@ export const categories = (state = [], action) => {
 	}
 };
 
+export const orders = (state = [], action) => {
+	switch (action.type) {
+		case "ORDERS_LOADED":
+			return action.orders;
+		default:
+			return state;
+	}
+};
+
+export const purchases = (state = [], action) => {
+	switch (action.type) {
+		case "PURCHASES_LOADED":
+			return action.purchases;
+		default:
+			return state;
+	}
+};
+
 export const cart = (state = [], action) => {
 	switch (action.type) {
 		case "ADD_TO_CART":
-			return [...state, product];
+			let filter = state.filter(e => e.id === action.product.id);
+			if (filter) {
+			}
+			return [...state, action.product];
 		case "REMOVE_FROM_CART":
 			return [
 				...state.slice(0, action.index),
@@ -75,6 +114,8 @@ export const cart = (state = [], action) => {
 			];
 		case "CLEAR_CART":
 			return [];
+		case "CART_LOADED":
+			return action.cart;
 		default:
 			return state;
 	}

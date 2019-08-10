@@ -45,7 +45,11 @@ class DefaultSelect extends Component {
                     >
                         <Text
                             style={{
-                                color: "black",
+                                color:
+                                    selectedValue === "" ||
+                                    placeholder === selectedValue
+                                        ? "red"
+                                        : "green",
                                 fontSize: 18,
                                 fontWeight: "bold"
                             }}

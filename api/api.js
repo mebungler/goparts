@@ -1,9 +1,10 @@
 import React from "react";
 import axios from "axios";
+import StorageService from "../services/StorageService";
 
 //uavparts.u0717696.cp.regruhosting.ru
 
-export const siteUrl = "http://192.168.0.123";
+export const siteUrl = "http://goparts.ae";
 export const url = siteUrl + "/api";
 export const urlResolve = param => {
 	if (!param) return;
@@ -11,10 +12,58 @@ export const urlResolve = param => {
 	return siteUrl + param;
 };
 
+let getToken = () => {
+	return StorageService.getState().token;
+};
+
 let packageData = data => {
 	const form = new FormData();
 	for (const key in data) {
 		form.append(key, data[key]);
+	}
+	return form;
+};
+
+let formRequest = data => {
+	let form = new FormData();
+	for (var key in data) {
+		for (var item in data[key]) {
+			if (Array.isArray(data[key][item])) {
+				data[key][item].map((e, i) => {
+					const uriParts = e.split(".");
+					const fileType = uriParts[uriParts.length - 1];
+					form.append(`${key}[${item}][${i}]`, {
+						uri: e.replace("file://", ""),
+						name: `photo.${fileType}`,
+						type: `image/${fileType}`
+					});
+				});
+				continue;
+			}
+			form.append(`${key}[${item}]`, data[key][item]);
+		}
+	}
+	return form;
+};
+
+let formData = data => {
+	let form = new FormData();
+	for (var key in data.QueryData) {
+		form.append(`QueryData[${key}]`, data.QueryData[key]);
+	}
+	for (var i = 0; i < data.Query.length; i++) {
+		for (var el = 0; el < data.Query[i].images.length; el++) {
+			data.Query[i].images.map((e, index) => {
+				const uriParts = e.split(".");
+				const fileType = uriParts[uriParts.length - 1];
+				form.append(`Query[${i}][images][${index}]`, {
+					uri: e.replace("file://", ""),
+					name: `photo.${fileType}`,
+					type: `image/${fileType}`
+				});
+			});
+		}
+		form.append(`Query[${i}][description]`, data.Query[i].description);
 	}
 	return form;
 };
@@ -33,12 +82,54 @@ export default {
 				.catch(({ response }) => response)
 	},
 	user: {
-		getInfo: token => {
+		getInfo: () => {
 			return axios
-				.post(url + "/profile/info", { Authorization: token })
+				.post(url + "/profile/info", null, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
 				.then(res => res)
 				.catch(({ response }) => response);
-		}
+		},
+		purchases: () => {
+			return axios
+				.post(url + "/profile/purchase", null, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response);
+		},
+		sold: () => {
+			return axios
+				.post(url + "/store-query/purchased", null, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response);
+		},
+		checkout: data =>
+			axios
+				.post(`${url}/order/make`, data, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response),
+		getCities: () =>
+			axios
+				.post(`${url}/cart/get-cities`, null, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response)
 	},
 	product: {
 		getMakes: () =>
@@ -62,6 +153,24 @@ export default {
 				)
 				.then(res => res)
 				.catch(({ response }) => response),
+		getModifications: (make, model) =>
+			axios
+				.get(url + "/query/get-car?vendor=" + make + "&car=" + model)
+				.then(res => res)
+				.catch(({ response }) => response),
+		getExactYears: (make, model, modification) =>
+			axios
+				.get(
+					url +
+						"/query/get-car?vendor=" +
+						make +
+						"&car=" +
+						model +
+						"&modification=" +
+						modification
+				)
+				.then(res => res)
+				.catch(({ response }) => response),
 		getProducts: (make, model, year) =>
 			axios
 				.get(
@@ -74,7 +183,149 @@ export default {
 						year
 				)
 				.then(res => res)
+				.catch(({ response }) => response),
+		getCarId: (make, model, year) =>
+			axios
+				.get(
+					url +
+						"/query/get-car-id?vendor=" +
+						make +
+						"&car=" +
+						model +
+						"&year=" +
+						year
+				)
+				.then(res => res.data.car_id)
+				.catch(({ response }) => response),
+		getExactModifications: (make, model) =>
+			axios
+				.get(url + "/query/get-car-id?vendor=" + make + "&car=" + model)
+				.then(res => res)
 				.catch(({ response }) => response)
 	},
-	category: { get: () => axios.get(url + "/store-category") }
+	category: {
+		get: () =>
+			axios
+				.get(url + "/store-category")
+				.then(res => res)
+				.catch(({ response }) => response)
+	},
+	options: {
+		get: () =>
+			axios
+				.get(url + "/store-option")
+				.then(res => res)
+				.catch(({ response }) => response)
+	},
+	order: {
+		request: (car_id, credentials) =>
+			axios
+				.post(
+					`${url}/query/create/?car_id=${car_id}`,
+					formData(credentials)
+				)
+				.then(res => res)
+				.catch(({ response }) => response),
+		makeRequest: (car_id, credentials) =>
+			axios
+				.post(
+					`${url}/my-query/create/?car_id=${car_id}`,
+					formData(credentials),
+					{
+						headers: {
+							Authorization: "Basic " + getToken()
+						}
+					}
+				)
+				.then(res => res)
+				.catch(({ response }) => response),
+		get: () =>
+			axios
+				.get(`${url}/my-query`, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response),
+		getRequests: () =>
+			axios
+				.get(`${url}/store-query`, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response),
+		addProduct: credentials =>
+			axios
+				.post(
+					`${url}/store-query/add-product`,
+					formRequest(credentials),
+					{
+						headers: {
+							Authorization: "Basic " + getToken(),
+							"Content-Type": "application/x-www-form-urlencoded"
+						}
+					}
+				)
+				.then(res => res)
+				.catch(({ response }) => response),
+		updateProduct: credentials =>
+			axios
+				.post(
+					`${url}/store-query/edit-product`,
+					formRequest(credentials),
+					{
+						headers: {
+							Authorization: "Basic " + getToken(),
+							"Content-Type": "application/x-www-form-urlencoded"
+						}
+					}
+				)
+				.then(res => res)
+				.catch(({ response }) => response)
+	},
+	cart: {
+		getCart: () =>
+			axios
+				.post(`${url}/cart`, null, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response),
+		addToCart: id =>
+			axios
+				.post(`${url}/cart/add`, packageData({ product_id: id }), {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response),
+		removeFromCart: id =>
+			axios
+				.post(
+					`${url}/cart/delete`,
+					packageData({ cart_product_id: id }),
+					{
+						headers: {
+							Authorization: "Basic " + getToken()
+						}
+					}
+				)
+				.then(res => res)
+				.catch(({ response }) => response),
+		removeAll: () =>
+			axios
+				.post(`${url}/cart/clear`, null, {
+					headers: {
+						Authorization: "Basic " + getToken()
+					}
+				})
+				.then(res => res)
+				.catch(({ response }) => response)
+	}
 };

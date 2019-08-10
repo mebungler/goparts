@@ -32,13 +32,15 @@ class MultiImagePicker extends Component {
 			photos,
 			add = () => {},
 			remove = () => {},
-			segmentIndex
+			segmentIndex,
+			single
 		} = this.props;
 		return (
 			<ScrollView
 				horizontal
 				showsHorizontalScrollIndicator={false}
-				style={{ padding: 15 }}
+				contentContainerStyle={{ paddingRight: 30 }}
+				style={{ padding: 15, paddingTop: 0, paddingBottom: 0 }}
 			>
 				{photos.map((e, i) => {
 					return (
@@ -66,7 +68,13 @@ class MultiImagePicker extends Component {
 								}}
 							>
 								<TouchableWithoutFeedback
-									onPress={() => remove(segmentIndex, i)}
+									onPress={() => {
+										if (single) {
+											remove(i);
+											return;
+										}
+										remove(segmentIndex, i);
+									}}
 								>
 									<Icon name="cancel" size={25} color="red" />
 								</TouchableWithoutFeedback>
@@ -78,14 +86,14 @@ class MultiImagePicker extends Component {
 					onPress={async () => {
 						let result = await ImagePicker.launchImageLibraryAsync({
 							mediaTypes: ImagePicker.MediaTypeOptions.Images,
-							allowsEditing: true,
-							base64: true
+							allowsEditing: true
 						});
 						if (!result.cancelled) {
-							add(
-								segmentIndex,
-								"data:image/jpeg;base64," + result.base64
-							);
+							if (single) {
+								add(result.uri);
+								return;
+							}
+							add(segmentIndex, result.uri);
 						}
 					}}
 				>

@@ -22,6 +22,13 @@ import Chat from "../views/Chat";
 import Orders from "../views/Orders";
 import LeaveOrder from "../views/LeaveOrder";
 import Checkout from "../views/Checkout";
+import OrderHistory from "../views/OrderHistory";
+import ImageView from "../views/ImageView";
+import NavigationService from "../services/NavigationService";
+
+import { connect } from "react-redux";
+
+import StorageService from "../services/StorageService";
 
 import DrawerContent from "../components/DrawerContent";
 
@@ -40,6 +47,18 @@ const accountStack = createStackNavigator(
 					/>
 				)
 			}
+		},
+		Login: {
+			screen: Login,
+			navigationOptions: {
+				header: null
+			}
+		},
+		Register: {
+			screen: Register,
+			navigationOptions: {
+				header: null
+			}
 		}
 	},
 	{}
@@ -52,8 +71,8 @@ const categoryStack = createStackNavigator(
 			navigationOptions: {
 				header: ({ navigation }) => (
 					<Header
-						name="Filter"
-						description="What you are looking for"
+						name="Goparts.ae"
+						description="Get the Best Prices"
 						openDrawer={navigation.openDrawer}
 					/>
 				)
@@ -98,6 +117,12 @@ const categoryStack = createStackNavigator(
 					/>
 				)
 			}
+		},
+		LeaveOrder: {
+			screen: LeaveOrder,
+			navigationOptions: {
+				header: null
+			}
 		}
 	},
 	{}
@@ -105,26 +130,67 @@ const categoryStack = createStackNavigator(
 
 const ChatsStack = createStackNavigator(
 	{
-		Chats: {
-			screen: Chats,
+		OrderHistory: {
+			screen: OrderHistory,
 			navigationOptions: {
-				header: null
-			}
-		},
-		Chat: {
-			screen: Chat,
-			navigationOptions: {
-				header: null
+				header: ({ navigation }) => (
+					<Header
+						name="Order history"
+						description="All purchase information"
+						back
+					/>
+				)
 			}
 		}
 	},
 	{}
 );
 
+let notificationsStack = createStackNavigator(
+	{
+		Notifications: {
+			screen: Orders,
+			navigationOptions: {
+				header: null
+			}
+		},
+		Product: {
+			screen: Product,
+			navigationOptions: {
+				header: ({ navigation }) => (
+					<Header
+						name="Product info"
+						description="Read all about the product"
+						back
+						openDrawer={navigation.openDrawer}
+					/>
+				)
+			}
+		}
+	},
+	{}
+);
+
+let cartStack = createStackNavigator({
+	Cart: {
+		screen: Cart,
+		navigationOptions: {
+			header: ({ navigation }) => (
+				<Header
+					name="Shopping cart"
+					description="Check all your products"
+					openDrawer={navigation.openDrawer}
+					back
+				/>
+			)
+		}
+	}
+});
+
 const AppNavigator = createBottomTabNavigator(
 	{
 		NotificationsTab: {
-			screen: Orders,
+			screen: notificationsStack,
 			navigationOptions: {
 				tabBarIcon: () => {
 					return <Icon name="bell" size={20} color="white" />;
@@ -132,14 +198,10 @@ const AppNavigator = createBottomTabNavigator(
 			}
 		},
 		FavouriteTab: {
-			screen: () => (
-				<View>
-					<Text>lol</Text>
-				</View>
-			),
+			screen: cartStack,
 			navigationOptions: {
 				tabBarIcon: () => {
-					return <Icon name="favorites" size={20} color="white" />;
+					return <Icon name="shoppingcart" size={20} color="white" />;
 				}
 			}
 		},
@@ -147,7 +209,7 @@ const AppNavigator = createBottomTabNavigator(
 			screen: categoryStack,
 			navigationOptions: {
 				tabBarIcon: () => {
-					return <Icon name="shoppingcart" size={20} color="white" />;
+					return <Icon name="plus_ad" size={20} color="white" />;
 				}
 			}
 		},
@@ -155,7 +217,7 @@ const AppNavigator = createBottomTabNavigator(
 			screen: ChatsStack,
 			navigationOptions: {
 				tabBarIcon: () => {
-					return <Icon name="message" size={20} color="white" />;
+					return <Icon name="history-(2)" size={20} color="white" />;
 				}
 			}
 		},
@@ -176,18 +238,6 @@ const AppNavigator = createBottomTabNavigator(
 
 const MainStack = createDrawerNavigator(
 	{
-		Login: {
-			screen: Login,
-			navigationOptions: {
-				header: null
-			}
-		},
-		Register: {
-			screen: Register,
-			navigationOptions: {
-				header: null
-			}
-		},
 		Main: {
 			screen: AppNavigator,
 			navigationOptions: {
@@ -205,8 +255,8 @@ const MainStack = createDrawerNavigator(
 const MainWithModel = createStackNavigator(
 	{
 		MainStack,
-		LeaveOrder,
-		Checkout
+		Checkout,
+		ImageView
 	},
 	{
 		headerMode: "none",
@@ -219,4 +269,56 @@ const MainWithModel = createStackNavigator(
 	}
 );
 
-export default createAppContainer(MainWithModel);
+const SellerTab = createBottomTabNavigator(
+	{
+		ChatTab: {
+			screen: ChatsStack,
+			navigationOptions: {
+				tabBarIcon: () => {
+					return <Icon name="history-(2)" size={20} color="white" />;
+				}
+			}
+		},
+		NotificationsTab: {
+			screen: notificationsStack,
+			navigationOptions: {
+				tabBarIcon: () => {
+					return <Icon name="bell" size={20} color="white" />;
+				}
+			}
+		},
+		AccountTab: {
+			screen: accountStack,
+			navigationOptions: {
+				tabBarIcon: () => {
+					return <Icon name="user-thin" size={20} color="white" />;
+				}
+			}
+		}
+	},
+	{
+		tabBarComponent: CustomTabBar,
+		initialRouteName: "NotificationsTab"
+	}
+);
+
+class AppRouter extends React.Component {
+	render() {
+		let { user: parent } = this.props;
+		let isAuthenticated = Object.keys(parent).length > 0;
+		let Comp = createAppContainer(MainWithModel);
+		if (isAuthenticated && parent.user.user_role === 1)
+			Comp = createAppContainer(SellerTab);
+		return (
+			<Comp
+				ref={navigatorRef => {
+					NavigationService.setTopLevelNavigator(navigatorRef);
+				}}
+			/>
+		);
+	}
+}
+
+const mapStateToProps = ({ user }) => ({ user });
+
+export default connect(mapStateToProps)(AppRouter);

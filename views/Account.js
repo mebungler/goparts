@@ -14,20 +14,22 @@ import { CheckBox } from "react-native-elements";
 import RoundButton from "../components/RoundButton";
 import { connect } from "react-redux";
 import NavigationService from "../services/NavigationService";
-import { urlResolve } from "../api/api";
+import api, { urlResolve } from "../api/api";
 import { ImagePicker, Permissions, Constants } from "expo";
-import { userLoggedIn } from "../actions/actions";
+import { userLoggedIn, userLoggedOut } from "../actions/actions";
 import StorageService from "../services/StorageService";
 
 // import ImagePicker from "react-native-image-picker";
 
-const AccountInfo = ({ user, changePhoto, isEditing }) => {
+const AccountInfo = ({ user: parent, changePhoto, isEditing, logout }) => {
+	let { user } = parent;
 	return (
 		<ScrollView style={{ backgroundColor: "transparent" }}>
 			<View
 				style={{
 					justifyContent: "center",
-					alignItems: "center"
+					alignItems: "center",
+					paddingBottom: 30
 				}}
 			>
 				<View>
@@ -39,12 +41,16 @@ const AccountInfo = ({ user, changePhoto, isEditing }) => {
 							justifyContent: "center",
 							alignItems: "center",
 							overflow: "hidden",
-							backgroundColor: "#afafaf"
+							backgroundColor: "#afafaf",
+							marginTop: 15
 						}}
 					>
 						<Image
 							source={{
-								uri: urlResolve(user.avatar)
+								uri:
+									user && user.avatar
+										? urlResolve(user.avatar)
+										: ""
 							}}
 							style={{
 								height: 100,
@@ -86,7 +92,7 @@ const AccountInfo = ({ user, changePhoto, isEditing }) => {
 						fontSize: 18
 					}}
 				>
-					{user.name}
+					{user.username}
 				</Text>
 				<View style={{ flexDirection: "row", padding: 15 }}>
 					<DefaultText
@@ -102,7 +108,7 @@ const AccountInfo = ({ user, changePhoto, isEditing }) => {
 						text={user.phone}
 						name="Phone"
 						icon={() => (
-							<Icon name="phone" size={28} color="#c4c4c4" />
+							<Icon name="phone-1" size={28} color="#c4c4c4" />
 						)}
 					/>
 				</View>
@@ -115,25 +121,14 @@ const AccountInfo = ({ user, changePhoto, isEditing }) => {
 						shadowRadius: 5,
 						padding: 30,
 						right: 0,
-						left: 0
+						left: 0,
+						marginBottom: 30
 					}}
 				>
 					<DefaultText
 						editable
-						style={{ right: 0, left: 0 }}
-						text={user.username}
-						name="Login"
-						icon={() => (
-							<Icon name="login_" size={28} color="#c4c4c4" />
-						)}
-						editIcon={() => (
-							<Icon name="penciledit" size={18} color="#c4c4c4" />
-						)}
-					/>
-					<DefaultText
-						editable
 						text={user.email}
-						name="Email"
+						name="Email/Login"
 						icon={() => (
 							<Icon name="e-mail" size={20} color="#c4c4c4" />
 						)}
@@ -152,8 +147,168 @@ const AccountInfo = ({ user, changePhoto, isEditing }) => {
 							<Icon name="penciledit" size={18} color="#c4c4c4" />
 						)}
 					/>
+					{user.user_role === 1 && (
+						<DefaultText
+							editable
+							text={user.legal_info}
+							name="Organization"
+							icon={() => (
+								<Icon
+									name="organization"
+									size={20}
+									color="#c4c4c4"
+								/>
+							)}
+							editIcon={() => (
+								<Icon
+									name="penciledit"
+									size={18}
+									color="#c4c4c4"
+								/>
+							)}
+						/>
+					)}
 				</View>
-				<View>
+				{isEditing && (
+					<View style={{ flexDirection: "row", marginBottom: 30 }}>
+						<RoundButton color="#069327" text="Save Profile" />
+					</View>
+				)}
+				<RoundButton
+					big
+					fill
+					animated
+					color="#069327"
+					text="Logout"
+					onPress={() => logout()}
+				/>
+			</View>
+		</ScrollView>
+	);
+};
+
+let UnauthorizedScreen = () => {
+	return (
+		<View
+			style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+		>
+			<RoundButton
+				large
+				big
+				fill
+				color="#069327"
+				text="Sign in"
+				onPress={() => NavigationService.navigate("Login")}
+			/>
+			<Text style={{ color: "#afafaf", fontSize: 18, margin: 15 }}>
+				Or
+			</Text>
+			<RoundButton
+				large
+				big
+				fill
+				color="#069327"
+				text="Sign up"
+				onPress={() => NavigationService.navigate("Register")}
+			/>
+		</View>
+	);
+};
+
+class Account extends Component {
+	state = { isEditing: false };
+	renderContent = () => {
+		let { isAuthenticated, user } = this.props;
+		let { isEditing } = this.state;
+		let { changePhoto } = this;
+		if (!isAuthenticated) {
+			return <UnauthorizedScreen />;
+		}
+		return (
+			<AccountInfo
+				{...{
+					user,
+					changePhoto,
+					isEditing,
+					logout: () => this.props.dispatch(userLoggedOut())
+				}}
+			/>
+		);
+	};
+
+	componentDidMount() {
+		this.getPermissionAsync();
+		// api.user.getInfo().then(res => {
+		// 	let { user: parent } = this.props;
+		// 	console.warn(res.data);
+		// 	this.props.dispatch(
+		// 		userLoggedIn({
+		// 			...res.data,
+		// 			user: { ...res.data.user, password: parent.user.password },
+		// 			token: parent.token
+		// 		})
+		// 	);
+		// });
+	}
+
+	getPermissionAsync = async () => {
+		if (Constants.platform.ios) {
+			const { status } = await Permissions.askAsync(
+				Permissions.CAMERA_ROLL
+			);
+			if (status !== "granted") {
+				alert(
+					"Sorry, we need camera roll permissions to make this work!"
+				);
+			}
+		}
+	};
+
+	changePhoto = async user => {
+		this.setState({ ...this.state, isEditing: true });
+		let result = await ImagePicker.launchImageLibraryAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			base64: true
+		});
+		if (!result.canceled) {
+			this.props.dispatch(
+				userLoggedIn({ ...user, avatar: result.base64 })
+			);
+		}
+	};
+
+	render() {
+		return <React.Fragment>{this.renderContent()}</React.Fragment>;
+	}
+}
+
+const mapStateToProps = ({ user }) => {
+	let usr = user;
+	if (Object.keys(user).length === 0) {
+		usr = StorageService.getState();
+		if (
+			usr === null ||
+			usr === "" ||
+			usr === undefined ||
+			Object.keys(usr).length === 0
+		)
+			return {
+				isAuthenticated: false,
+				user: {}
+			};
+	}
+	return {
+		isAuthenticated: true,
+		user: usr
+	};
+};
+
+export default connect(mapStateToProps)(Account);
+
+export { UnauthorizedScreen };
+
+/*<View>
 					<Text
 						style={{
 							fontWeight: "bold",
@@ -215,120 +370,4 @@ const AccountInfo = ({ user, changePhoto, isEditing }) => {
 							}}
 						/>
 					</View>
-				</View>
-				{isEditing && (
-					<View style={{ flexDirection: "row", marginBottom: 30 }}>
-						<RoundButton color="#069327" text="Save Profile" />
-					</View>
-				)}
-			</View>
-		</ScrollView>
-	);
-};
-
-let UnauthorizedScreen = () => {
-	return (
-		<View
-			style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-		>
-			<RoundButton
-				large
-				big
-				fill
-				color="#069327"
-				text="Sign in"
-				onPress={() => NavigationService.navigate("Login")}
-			/>
-			<Text style={{ color: "#afafaf", fontSize: 18, margin: 15 }}>
-				Or
-			</Text>
-			<RoundButton
-				large
-				big
-				fill
-				color="#069327"
-				text="Sign up"
-				onPress={() => NavigationService.navigate("Register")}
-			/>
-		</View>
-	);
-};
-
-class Account extends Component {
-	state = { isEditing: false };
-	renderContent = () => {
-		let { isAuthenticated, user } = this.props;
-		let { isEditing } = this.state;
-		console.warn(isAuthenticated ? "Authenticated" : "Not Authenticated");
-		let { changePhoto } = this;
-		if (!isAuthenticated) {
-			return <UnauthorizedScreen />;
-		}
-		return <AccountInfo {...{ user, changePhoto, isEditing }} />;
-	};
-
-	componentDidMount() {
-		this.getPermissionAsync();
-	}
-
-	getPermissionAsync = async () => {
-		if (Constants.platform.ios) {
-			const { status } = await Permissions.askAsync(
-				Permissions.CAMERA_ROLL
-			);
-			if (status !== "granted") {
-				alert(
-					"Sorry, we need camera roll permissions to make this work!"
-				);
-			}
-		}
-	};
-
-	changePhoto = async user => {
-		// ImagePicker.showImagePicker(this.options, response => {
-		// 	if (response.uri) {
-		// 		this.props.dispatch(
-		// 			userLoggedIn({ ...user, avatar: response.uri })
-		// 		);
-		// 	}
-		// });
-		this.setState({ ...this.state, isEditing: true });
-		let result = await ImagePicker.launchImageLibraryAsync({
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
-			allowsEditing: true,
-			base64: true
-		});
-		if (!result.canceled) {
-			this.props.dispatch(
-				userLoggedIn({ ...user, avatar: result.base64 })
-			);
-		}
-	};
-
-	render() {
-		return <React.Fragment>{this.renderContent()}</React.Fragment>;
-	}
-}
-
-const mapStateToProps = ({ user }) => {
-	let usr = user;
-	if (Object.keys(user).length === 0) {
-		usr = StorageService.getState();
-		if (
-			usr === null ||
-			usr === "NA" ||
-			usr === undefined ||
-			Object.keys(usr).length === 0
-		)
-			return {
-				isAuthenticated: false,
-				user: {}
-			};
-	}
-	return {
-		isAuthenticated: true,
-		user: usr
-	};
-};
-
-export default connect(mapStateToProps)(Account);
+				</View>*/

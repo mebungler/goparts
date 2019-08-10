@@ -1,5 +1,5 @@
 import React, { Component, PropTypes } from "react";
-import { View, Dimensions } from "react-native";
+import { View, Dimensions, Text } from "react-native";
 import Header from "../components/Header";
 import DefaultPicker from "../components/DefaultPicker";
 import RoundButton from "../components/RoundButton";
@@ -9,8 +9,12 @@ import {
     populateModels,
     populateYears,
     populateMakes,
-    populateProducts
+    populateProducts,
+    populateExactYears
 } from "../actions/thunk";
+import api from "../api/api";
+import { yearsLoaded } from "../actions/actions";
+import StorageService from "../services/StorageService";
 
 let width = Dimensions.get("window").width - 30;
 
@@ -19,20 +23,40 @@ class Filter extends Component {
         status: "idle",
         make: "",
         model: "",
-        year: ""
+        year: "",
+        generation: "",
+        error: ""
     };
 
     search = () => {
         this.setState({ status: "rotate" });
-        let { make, year, model } = this.state;
+        let { make, year, model, generation } = this.state;
+        if (!make || !year || !model) {
+            this.setState({
+                ...this.state,
+                error: "Please select all fields!"
+            });
+            return;
+        }
         this.props.dispatch(
             populateProducts(make, model, year, () => {
                 this.setState({ status: "success" });
                 setTimeout(() => {
-                    this.props.navigation.navigate("Categories", {
-                        parent: make
+                    this.props.navigation.navigate("LeaveOrder", {
+                        make,
+                        year,
+                        model
                     });
-                    setTimeout(() => this.setState({ status: "idle" }), 100);
+                    setTimeout(
+                        () =>
+                            this.setState({
+                                status: "idle",
+                                make: "",
+                                model: "",
+                                year: ""
+                            }),
+                        100
+                    );
                 }, 100);
             })
         );
@@ -43,10 +67,25 @@ class Filter extends Component {
     }
 
     render() {
-        let { make, year, model } = this.state;
-        let { makes, years, models } = this.props;
+        let { make, year, model, generation, error } = this.state;
+        let { makes, years, models, generations, user: parent } = this.props;
+        let isAuthanticated = Object.keys(parent).length > 0;
         return (
             <React.Fragment>
+                {isAuthanticated && (
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            justifyContent: "center",
+                            paddingTop: 15
+                        }}
+                    >
+                        <Text style={{ fontSize: 18 }}>Welcome back </Text>
+                        <Text style={{ fontSize: 18, color: "red" }}>
+                            {parent.user.username}
+                        </Text>
+                    </View>
+                )}
                 <View
                     style={{
                         flex: 1,
@@ -62,7 +101,8 @@ class Filter extends Component {
                         onValueChange={(e, i) => {
                             this.setState({
                                 ...this.state,
-                                make: e
+                                make: e,
+                                error: ""
                             });
                             this.props.dispatch(populateModels(e));
                         }}
@@ -92,9 +132,19 @@ class Filter extends Component {
                         onValueChange={(e, i) => {
                             this.setState({
                                 ...this.state,
-                                model: e
+                                model: e,
+                                error: ""
                             });
-                            this.props.dispatch(populateYears(make, e));
+                            api.product
+                                .getExactModifications(make, e)
+                                .then(res => {
+                                    let all = [];
+                                    let obj = res.data.year;
+                                    for (var el in obj) {
+                                        all.push({ label: el, value: el });
+                                    }
+                                    this.props.dispatch(yearsLoaded(all));
+                                });
                         }}
                         selectedValue={model}
                         leftIcon={() => (
@@ -113,20 +163,22 @@ class Filter extends Component {
                             />
                         )}
                     />
+
                     <View
                         style={{ backgroundColor: "#c4c4c4", height: 2, width }}
                     />
 
                     <DefaultPicker
                         data={years}
-                        placeholder="Select a Generation"
+                        placeholder="Select a Year"
                         onValueChange={(e, i) => {
                             this.setState({
                                 ...this.state,
-                                year: e
+                                year: e,
+                                error: ""
                             });
                         }}
-                        description="Year"
+                        description="Year of production"
                         selectedValue={year}
                         leftIcon={() => (
                             <Icon
@@ -144,12 +196,17 @@ class Filter extends Component {
                             />
                         )}
                     />
+                    {!!error && (
+                        <Text style={{ padding: 15, color: "red" }}>
+                            {error}
+                        </Text>
+                    )}
                     <RoundButton
                         status={this.state.status}
                         fill
                         color="#03a127"
                         onPress={this.search}
-                        text="Search"
+                        text="Next"
                         animated
                         big
                     />
@@ -159,11 +216,38 @@ class Filter extends Component {
     }
 }
 
-const mapStateToProps = ({ makes = [], models = [], years = [] }) => {
+const mapStateToProps = ({
+    user,
+    makes = [],
+    models = [],
+    years = [],
+    generations = []
+}) => {
+    let usr = user;
+    if (Object.keys(user).length === 0) {
+        usr = StorageService.getState();
+        if (
+            usr === null ||
+            usr === "" ||
+            usr === undefined ||
+            Object.keys(usr).length === 0
+        )
+            return {
+                makes,
+                models,
+                years,
+                generations,
+                isAuthenticated: false,
+                user: {}
+            };
+    }
     return {
         makes,
         models,
-        years
+        years,
+        generations,
+        isAuthenticated: true,
+        user: usr
     };
 };
 

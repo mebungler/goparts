@@ -13,26 +13,41 @@ class InlinePicker extends Component {
 				{ label: "first", value: "first" },
 				{ label: "second", value: "second" }
 			],
-			style
+			style,
+			onValueChange
 		} = this.props;
 		return (
-			<Picker items={data} placeholder={placeholder}>
+			<Picker
+				items={data}
+				placeholder={placeholder}
+				onValueChange={onValueChange}
+			>
 				<View
 					style={[
 						{
 							flexDirection: "row",
 							justifyContent: "space-between",
-							paddingRight: 15
+							paddingRight: 30,
+							flexWrap: "shrink"
 						},
 						style
 					]}
 				>
-					<Text style={{ fontWeight: "bold", color, fontSize: 18 }}>
+					<Text
+						style={{
+							fontWeight: "bold",
+							color,
+							fontSize: 18,
+							width: 220
+						}}
+					>
 						{!selectedValue
 							? placeholder.label
 							: selectedValue.label}
 					</Text>
-					<Icon />
+					<View style={{ justifyContent: "center" }}>
+						<Icon />
+					</View>
 				</View>
 			</Picker>
 		);

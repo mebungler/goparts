@@ -8,7 +8,12 @@ import {
 	models,
 	years,
 	products,
-	categories
+	categories,
+	modifications,
+	generations,
+	orders,
+	cart,
+	purchases
 } from "../reducers/reducers";
 
 const configureStore = () =>
@@ -20,7 +25,12 @@ const configureStore = () =>
 			years,
 			models,
 			products,
-			categories
+			categories,
+			modifications,
+			generations,
+			orders,
+			cart,
+			purchases
 		}),
 		applyMiddleware(thunk)
 	);

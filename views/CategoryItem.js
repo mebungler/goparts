@@ -12,7 +12,15 @@ import RoundButton from "../components/RoundButton";
 import NavigationService from "../services/NavigationService";
 import { urlResolve } from "../api/api";
 
-const CategoryItem = ({ item, horizontal, onCartPress }) => {
+const CategoryItem = ({
+	item,
+	horizontal,
+	onCartPress,
+	noMargin,
+	addToCart = () => {},
+	isInCart
+}) => {
+	console.warn(isInCart);
 	return (
 		<TouchableWithoutFeedback
 			onPress={() => {
@@ -26,29 +34,29 @@ const CategoryItem = ({ item, horizontal, onCartPress }) => {
 						overflow: "hidden",
 						marginBottom: 5,
 						borderWidth: 1,
-						shodowColor: "black",
-						shadowOpacity: 0.33,
-						shadowOffset: { width: 5, height: 5 },
-						backgroundColor: "white",
-						elevation: 2
+						backgroundColor: "white"
 					},
-					horizontal
-						? {
-								width: Dimensions.get("window").width - 45,
-								marginBottom: 30,
-								marginRight: 0
-						  }
-						: {}
+					horizontal && {
+						width: Dimensions.get("window").width - 45,
+						marginBottom: 30,
+						marginRight: 0
+					},
+					noMargin && { width: Dimensions.get("window").width - 40 }
 				]}
+				wrapperStyle={{ margin: 0, padding: 0 }}
 			>
 				<React.Fragment>
 					<View style={{ flexDirection: "row" }}>
 						<Image
 							resizeMode="cover"
-							style={{ height: 100, width: 100 }}
+							style={{
+								height: 100,
+								width: 100,
+								borderRadius: 10
+							}}
 							source={{ uri: urlResolve(item.image) }}
 						/>
-						<View style={{ flex: 1, padding: 15 }}>
+						<View style={{ padding: 15 }}>
 							<Text
 								style={{
 									textDecorationLine: "underline",
@@ -67,12 +75,11 @@ const CategoryItem = ({ item, horizontal, onCartPress }) => {
 								{item.name}
 							</Text>
 						</View>
-						<Icon name="favorites" size={25} color="#cccccc" />
 					</View>
 					<View
 						style={{
 							flexDirection: "row",
-							flex: 1
+							justifyContent: "space-between"
 						}}
 					>
 						<View
@@ -99,30 +106,42 @@ const CategoryItem = ({ item, horizontal, onCartPress }) => {
 							style={{
 								flexDirection: "row",
 								justifyContent: "flex-end",
-								alignItems: "flex-end",
-								flex: 1
+								alignItems: "flex-end"
 							}}
 						>
 							<RoundButton
 								text="Buy now"
 								color="#fe0000"
-								onPress={() =>
+								onPress={() => {
+									if (!isInCart) addToCart(item);
 									NavigationService.navigate("Cart", {
 										item
-									})
-								}
+									});
+								}}
 							/>
 							<RoundButton
+								status={isInCart ? "disabled" : "idle"}
+								onPress={() => {
+									addToCart(item);
+								}}
 								style={{ marginLeft: 15 }}
 								color="#01a529"
 								fill
-								icon={() => (
-									<Icon
-										name="shoppingcart"
-										size={18}
-										color="white"
-									/>
-								)}
+								icon={() =>
+									isInCart ? (
+										<Icon
+											name="ok"
+											size={18}
+											color="white"
+										/>
+									) : (
+										<Icon
+											name="shoppingcart"
+											size={18}
+											color="white"
+										/>
+									)
+								}
 							/>
 						</View>
 					</View>

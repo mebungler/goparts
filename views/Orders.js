@@ -1,46 +1,126 @@
 import React from "react";
-import { View, Text, FlatList } from "react-native";
+import { View, Text, FlatList, ScrollView } from "react-native";
 import Header from "../components/Header";
 import OrderItem from "./OrderItem";
-
-const data = [
-	{
-		date: "2019-05-09 9:37 AM",
-		id: 56,
-		name: "Stop Light Right Side Model 2009",
-		parent: "Wolksvagen Passat CC",
-		fuelType: "Petrol",
-		generation: "3",
-		transmission: "Automatic",
-		driveType: "4 Wheel Drive",
-		year: "2019",
-		description: "Good condition, 2009 model. Chevrolet Cruze",
-		competitorPrices: ["440 AED", "460 AED", "450 AED"],
-		myPrice: "440 AED",
-		images: [],
-		photo:
-			"https://topgearrussia.ru/data/topgear/preview/2018-09/20/image-b5ad3c511537426791-640x400.jpg",
-		state: "approved"
-	}
-];
+import { connect } from "react-redux";
+import StorageService from "../services/StorageService";
+import ListEmptyComponent from "../components/ListEmptyComponent";
+import { populateOrders, populateRequests } from "../actions/thunk";
+import Accordion from "react-native-collapsible/Accordion";
+import RoundButton from "../components/RoundButton";
+import { UnauthorizedScreen } from "./Account";
+import { addToCart } from "../actions/actions";
 
 class Orders extends React.Component {
+	state = { loading: false, activeSections: [] };
+	componentDidMount() {
+		let { isAuthenticated } = this.props;
+		let type = null;
+		if (isAuthenticated) {
+			let { user } = this.props.user;
+			type = user.user_role;
+			if (type === 0) {
+				this.setState({ ...this.state, loading: true });
+				this.props.dispatch(
+					populateOrders(res => {
+						this.setState({ ...this.state, loading: false });
+					})
+				);
+			}
+			if (type === 1) {
+				this.setState({ ...this.state, loading: true });
+				this.props.dispatch(
+					populateRequests(res => {
+						this.setState({ ...this.state, loading: false });
+					})
+				);
+			}
+		}
+	}
+
+	updateOrders = func => {
+		this.props.dispatch(populateOrders(func));
+	};
+
+	addToCart = product => {
+		this.props.dispatch(addToCart({ ...product, quantity: 1 }));
+	};
+
 	render() {
+		let { isAuthenticated } = this.props;
+		if (!isAuthenticated) {
+			return (
+				<React.Fragment>
+					<Header
+						name="Your Requests"
+						description="Seller suggestions"
+					/>
+					<UnauthorizedScreen />
+				</React.Fragment>
+			);
+		}
+		let { orders, cart } = this.props;
+		let { loading, activeSections } = this.state;
+		let { user } = this.props.user;
+		let { update, updateOrders, addToCart } = this;
+		let type = user.user_role;
 		return (
-			<View>
-				<Header
-					name="Order History"
-					description="All purchase information"
-				/>
-				<FlatList
-					data={data}
-					renderItem={({ item }) => (
-						<OrderItem {...{ item }} keyExtractor={e => e.id} />
-					)}
-				/>
+			<View style={{ flex: 1 }}>
+				<Header name="Your Requests" description="Seller suggestions" />
+				{orders.length <= 0 && (
+					<ListEmptyComponent
+						{...{
+							loading,
+							hasData: orders.length <= 0
+						}}
+					/>
+				)}
+				{orders.length > 0 && (
+					<ScrollView
+						contentContainerStyle={{ paddingBottom: 30 }}
+						style={{ paddingTop: 10, paddingBottom: 30 }}
+					>
+						{orders.map((item, index) => (
+							<OrderItem
+								{...{
+									item,
+									type,
+									updateOrders,
+									addToCart,
+									cart
+								}}
+							/>
+						))}
+					</ScrollView>
+				)}
 			</View>
 		);
 	}
 }
 
-export default Orders;
+const mapStateToProps = ({ orders, user, cart }) => {
+	let usr = user;
+	if (Object.keys(user).length === 0) {
+		usr = StorageService.getState();
+		if (
+			usr === null ||
+			usr === "" ||
+			usr === undefined ||
+			Object.keys(usr).length === 0
+		)
+			return {
+				isAuthenticated: false,
+				user: {},
+				orders,
+				cart
+			};
+	}
+	return {
+		isAuthenticated: true,
+		user: usr,
+		orders,
+		cart
+	};
+};
+
+export default connect(mapStateToProps)(Orders);

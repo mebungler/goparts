@@ -194,7 +194,11 @@ export default class RoundButton extends React.Component {
 							height: 50,
 							borderRadius: 25
 						},
-						noMargin && { marginTop: 10 }
+						noMargin && {
+							marginTop: 10,
+							marginLeft: 0,
+							marginRight: 0
+						}
 					]}
 				>
 					{status === "rotate" && (
@@ -219,7 +223,7 @@ export default class RoundButton extends React.Component {
 							<NamedIcon name={"ok"} color="white" size={16} />
 						</View>
 					)}
-					{status === "disabled" && (
+					{status === "disabled" && DisabledIcon && (
 						<Animated.View
 							style={{
 								transform: [

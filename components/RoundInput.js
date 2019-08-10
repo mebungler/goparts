@@ -50,6 +50,8 @@ class RoundInput extends Component {
 			value,
 			placeholder,
 			multiline,
+			name,
+			leftIconStyle,
 			...rest
 		} = this.props;
 		let { renderLeftIcon, renderRightIcon, validate } = this;
@@ -107,7 +109,8 @@ class RoundInput extends Component {
 									justifyContent: "center",
 									alignItems: "center",
 									marginTop: -15,
-									width: simple ? 30 : 20
+									width: simple ? 30 : 20,
+									...leftIconStyle
 								}}
 							>
 								{renderLeftIcon()}
@@ -152,17 +155,12 @@ class RoundInput extends Component {
 									}
 									if (email || password) {
 										onTextChange(
-											email ? "username" : "password",
+											email ? "email" : "password",
 											e
 										);
 										return;
 									}
-									onTextChange(
-										placeholder
-											.toLowerCase()
-											.replace(/\s/g, ""),
-										e
-									);
+									onTextChange(name, e);
 								}}
 								secureTextEntry={password ? true : false}
 							/>

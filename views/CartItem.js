@@ -12,8 +12,11 @@ import RoundPicker from "../components/RoundPicker";
 import RoundInput from "../components/RoundInput";
 import NavigationService from "../services/NavigationService";
 import Icon from "../services/IconService";
+import { urlResolve } from "../api/api";
 
-const CartItem = ({ item }) => {
+const CartItem = ({ item, index, removeFromCart, updateCart }) => {
+	let subtotal = parseFloat(item.purchase_price) * item.quantity;
+	console.warn(item.quantity);
 	return (
 		<>
 			<Card
@@ -35,8 +38,12 @@ const CartItem = ({ item }) => {
 					<View style={{ flexDirection: "row" }}>
 						<Image
 							resizeMode="cover"
-							style={{ height: 100, width: 100 }}
-							source={{ uri: item.photo }}
+							style={{
+								height: 100,
+								width: 100,
+								borderRadius: 10
+							}}
+							source={{ uri: urlResolve(item.image) }}
 						/>
 						<View style={{ flex: 1, padding: 15 }}>
 							<Text
@@ -57,17 +64,12 @@ const CartItem = ({ item }) => {
 								{item.name}
 							</Text>
 						</View>
-						<Icon name="cancel-circled" size={25} color="red" />
+						<TouchableWithoutFeedback
+							onPress={() => removeFromCart(index)}
+						>
+							<Icon name="cancel-circled" size={25} color="red" />
+						</TouchableWithoutFeedback>
 					</View>
-					<RoundPicker
-						data={[
-							{ label: "Show options", value: "default" },
-							{ label: "lol", value: "lol" },
-							{ label: "lol", value: "lol" },
-							{ label: "lol", value: "lol" },
-							{ label: "lol", value: "lol" }
-						]}
-					/>
 					<View
 						style={{
 							flexDirection: "row",
@@ -103,91 +105,11 @@ const CartItem = ({ item }) => {
 									fontSize: 18
 								}}
 							>
-								{item.price}
+								{item.purchase_price}
 							</Text>
 							<Text style={{ fontWeight: "100", fontSize: 18 }}>
-								{item.priceTag}
-							</Text>
-						</View>
-					</View>
-					<View
-						style={{
-							flexDirection: "row",
-							alignItems: "center"
-						}}
-					>
-						<View
-							style={{
-								width: 200,
-								borderBottomWidth: 1,
-								borderColor: "#c4c4c4",
-								paddingBottom: 15,
-								marginTop: 15
-							}}
-						>
-							<Text style={{ fontWeight: "bold", fontSize: 18 }}>
-								Quantity
-							</Text>
-						</View>
-						<View
-							style={{
-								flex: 1,
-								flexDirection: "row",
-								alignItems: "center",
-								justifyContent: "flex-end"
-							}}
-						>
-							<RoundInput
-								style={{
-									color: "red",
-									fontSize: 18,
-									textAlign: "center"
-								}}
-								small
-								value={item.value}
-							/>
-						</View>
-					</View>
-					<View
-						style={{
-							flexDirection: "row",
-							justifyContent: "space-between"
-						}}
-					>
-						<View
-							style={{
-								flexDirection: "row",
-								alignItems: "center",
-								justifyContent: "flex-start",
-								width: 200,
-								marginBottom: 15,
-								marginTop: 15
-							}}
-						>
-							<Text style={{ fontWeight: "bold", fontSize: 18 }}>
-								Subtotal
-							</Text>
-						</View>
-
-						<View
-							style={{
-								flex: 1,
-								flexDirection: "row",
-								alignItems: "center",
-								justifyContent: "flex-end"
-							}}
-						>
-							<Text
-								style={{
-									color: "#01a629",
-									fontWeight: "bold",
-									fontSize: 18
-								}}
-							>
-								{item.price * item.quantity}
-							</Text>
-							<Text style={{ fontWeight: "100", fontSize: 18 }}>
-								{item.priceTag}
+								{" "}
+								AED
 							</Text>
 						</View>
 					</View>

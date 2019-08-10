@@ -22,8 +22,9 @@ export class ListHeaderComponent extends React.Component {
 						flexDirection: "row",
 						alignItems: "center",
 						padding: 15,
-						paddingTop: 0,
-						marginBottom: 15
+						paddingTop: 5,
+						marginBottom: 0,
+						paddingBottom: 0
 					}}
 				>
 					<View
@@ -98,13 +99,19 @@ export class Header extends React.Component {
 	state = { marginTop: 0 };
 	outsiderWidth = this.props.user ? 60 : 20;
 	renderLeft = () => {
-		let { user, openDrawer } = this.props;
-		if (!user)
+		let { user, openDrawer, noMenu } = this.props;
+		if (!user) {
+			if (noMenu) return null;
 			return (
-				<TouchableWithoutFeedback onPress={() => openDrawer()}>
-					<Icon size={14} name="burger" color="white" />
+				<TouchableWithoutFeedback
+					onPress={() => NavigationService.toggleDrawer()}
+				>
+					<View style={{ padding: 10 }}>
+						<Icon size={14} name="burger" color="white" />
+					</View>
 				</TouchableWithoutFeedback>
 			);
+		}
 		return (
 			<View>
 				<View
@@ -168,7 +175,7 @@ export class Header extends React.Component {
 							fontWeight: "bold",
 							textDecorationLine: "underline",
 							textDecorationStyle: "dotted",
-							marginBottom: 15
+							marginBottom: 0
 						}}
 					>
 						{description}
@@ -198,7 +205,8 @@ export class Header extends React.Component {
 			white,
 			midSize,
 			user,
-			clickable
+			clickable,
+			noMenu
 		} = this.props;
 		return (
 			<>
@@ -210,7 +218,8 @@ export class Header extends React.Component {
 							paddingBottom: 0,
 							paddingTop: 20,
 							borderBottomEndRadius: main || midSize ? 0 : 50,
-							height: clickable ? 150 : 130
+							height: clickable ? 110 : 80,
+							paddingBottom: 5
 						}}
 						onLayout={({ nativeEvent }) => {
 							this.setState({
@@ -222,7 +231,7 @@ export class Header extends React.Component {
 							style={{
 								justifyContent: "space-between",
 								flexDirection: "row",
-								marginTop: 15
+								marginTop: 10
 							}}
 						>
 							{this.renderLeft()}
@@ -238,7 +247,7 @@ export class Header extends React.Component {
 										color: "white",
 										fontSize: 19,
 										fontWeight: "bold",
-										marginBottom: 15
+										marginBottom: 0
 									}}
 								>
 									{!user ? name : user.name}

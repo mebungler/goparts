@@ -29,15 +29,49 @@ class DrawerContent extends Component {
                     />
                 </View>
                 <View style={{ padding: 30 }}>
-                    <DrawerItem iconName="bell" text="My orders" />
-                    <DrawerItem iconName="favorites" text="Favorites" />
                     <DrawerItem
-                        iconName="shoppingcart"
-                        text="Shopping cart"
-                        notifications={3}
+                        onPress={() => {
+                            this.props.navigation.closeDrawer();
+                            this.props.navigation.navigate("NotificationsTab");
+                        }}
+                        iconName="bell"
+                        text="My orders"
                     />
-                    <DrawerItem iconName="message" text="Order history" />
-                    <DrawerItem iconName="user" text="My page" />
+                    <DrawerItem
+                        onPress={() => {
+                            this.props.navigation.closeDrawer();
+                            this.props.navigation.navigate("FavouriteTab");
+                        }}
+                        iconName="shoppingcart"
+                        text="My cart"
+                        notifications={
+                            this.props.cart && this.props.cart.length
+                        }
+                    />
+                    <DrawerItem
+                        onPress={() => {
+                            this.props.navigation.closeDrawer();
+                            this.props.navigation.navigate("CategoriesTab");
+                        }}
+                        iconName="plus_ad"
+                        text="Leave order"
+                    />
+                    <DrawerItem
+                        onPress={() => {
+                            this.props.navigation.closeDrawer();
+                            this.props.navigation.navigate("ChatTab");
+                        }}
+                        iconName="history-(2)"
+                        text="Order history"
+                    />
+                    <DrawerItem
+                        onPress={() => {
+                            this.props.navigation.closeDrawer();
+                            this.props.navigation.navigate("AccountTab");
+                        }}
+                        iconName="user"
+                        text="My page"
+                    />
                 </View>
                 <View
                     style={{
@@ -97,6 +131,6 @@ const DrawerItem = ({ iconName, text, notifications, onPress }) => {
     );
 };
 
-const mapStateToProps = state => ({});
+const mapStateToProps = ({ cart }) => ({ cart });
 
 export default connect(mapStateToProps)(DrawerContent);

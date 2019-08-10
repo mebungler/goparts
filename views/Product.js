@@ -14,6 +14,7 @@ import RoundPicker from "../components/RoundPicker";
 import Icon from "../services/IconService";
 import CategoryItem from "./CategoryItem";
 import { connect } from "react-redux";
+import { urlResolve } from "../api/api";
 
 class Product extends Component {
 	state = { imageIndex: 0 };
@@ -24,7 +25,10 @@ class Product extends Component {
 		let item = navigation.getParam("item");
 		return (
 			<React.Fragment>
-				<ScrollView style={{ backgroundColor: "#f5f5f5" }}>
+				<ScrollView
+					contentContainerStyle={{ paddingBottom: 30 }}
+					style={{ backgroundColor: "#f5f5f5" }}
+				>
 					{item.photos && item.photos.length > 0 && (
 						<Card
 							containerStyle={{
@@ -34,10 +38,16 @@ class Product extends Component {
 								borderWidth: 0,
 								shadowColor: "black",
 								shadowOpacity: 0.6,
-								borderRadius: 5
+								borderRadius: 5,
+								justifyContent: "center"
+							}}
+							wrapperStyle={{
+								justifyContent: "center",
+								alignItems: "center"
 							}}
 						>
 							<ScrollView
+								style={{ width: 300 }}
 								horizontal
 								pagingEnabled
 								showsHorizontalScrollIndicator={false}
@@ -57,18 +67,24 @@ class Product extends Component {
 										return (
 											<TouchableWithoutFeedback
 												onPress={() =>
-													this.setState({
-														...this.state,
-														imageIndex: index
-													})
+													this.props.navigation.navigate(
+														"ImageView",
+														{
+															imageIndex: index,
+															images: item.photos
+														}
+													)
 												}
 											>
 												<Image
 													style={{
 														height: 300,
-														width: 300
+														width: 300,
+														borderRadius: 10
 													}}
-													source={{ uri: el }}
+													source={{
+														uri: urlResolve(el)
+													}}
 													resizeMode="cover"
 												/>
 											</TouchableWithoutFeedback>
@@ -97,7 +113,8 @@ class Product extends Component {
 									width: 50,
 									height: 50,
 									position: "absolute",
-									marginTop: 150
+									marginTop: 150,
+									left: 15
 								}}
 							>
 								<Icon name="left-arrow" />
@@ -164,7 +181,7 @@ class Product extends Component {
 										fontSize: 30
 									}}
 								>
-									{item.price}
+									{item.purchase_price}
 								</Text>
 								<View
 									style={{
@@ -182,12 +199,6 @@ class Product extends Component {
 									</Text>
 								</View>
 							</View>
-							<Icon
-								name="like"
-								style={{ marginTop: 10 }}
-								size={25}
-								color="#cccccc"
-							/>
 						</View>
 						<View style={{ flexDirection: "row" }}>
 							<View style={{ flex: 1 }}>
@@ -198,7 +209,7 @@ class Product extends Component {
 										marginBottom: 15
 									}}
 								>
-									SKU:
+									Car ID:
 								</Text>
 								<Text
 									style={{
@@ -227,7 +238,7 @@ class Product extends Component {
 										marginBottom: 15
 									}}
 								>
-									{item.sku}
+									{item.id}
 								</Text>
 								<Text
 									style={{
@@ -245,19 +256,10 @@ class Product extends Component {
 										marginBottom: 15
 									}}
 								>
-									{item.type_of_car}
+									{item.typeOfCar}
 								</Text>
 							</View>
 						</View>
-						<RoundPicker
-							data={[
-								{ label: "Show options", value: "default" },
-								{ label: "lol", value: "lol" },
-								{ label: "lol", value: "lol" },
-								{ label: "lol", value: "lol" },
-								{ label: "lol", value: "lol" }
-							]}
-						/>
 						<RoundButton
 							text="Add to Cart"
 							color="#00a829"
@@ -295,15 +297,6 @@ class Product extends Component {
 						</Text>
 						<Text>{item.description}</Text>
 					</Card>
-					<FlatList
-						horizontal
-						showsHorizontalScrollIndicator={false}
-						data={products}
-						keyExtractor={e => e.id}
-						renderItem={({ item }) => (
-							<CategoryItem {...{ item }} horizontal />
-						)}
-					/>
 				</ScrollView>
 			</React.Fragment>
 		);
@@ -313,3 +306,13 @@ class Product extends Component {
 const mapStateToProps = ({ products }) => ({ products });
 
 export default connect(mapStateToProps)(Product);
+
+// <FlatList
+// 						horizontal
+// 						showsHorizontalScrollIndicator={false}
+// 						data={products}
+// 						keyExtractor={e => e.id}
+// 						renderItem={({ item }) => (
+// 							<CategoryItem {...{ item }} horizontal />
+// 						)}
+// 					/>
